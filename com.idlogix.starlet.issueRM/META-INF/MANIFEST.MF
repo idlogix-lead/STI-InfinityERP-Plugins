@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: IssueRM
+Bundle-SymbolicName: com.idlogix.starlet.issueRM
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: IDLOGIX
+Automatic-Module-Name: com.idlogix.starlet.issueRM
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: org.adempiere.base;bundle-version="8.2.0",
+ org.adempiere.plugin.utils;bundle-version="8.2.0"
+Import-Package: org.eri.model
+Service-Component: ProcessFactoryComponentDef.xml
