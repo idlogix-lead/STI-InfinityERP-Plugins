@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Emailsender
+Bundle-SymbolicName: org.innovation.emailsender
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: org.innovation.emailsender
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.adempiere.plugin.utils;bundle-version="8.2.0",
+ org.adempiere.base;bundle-version="8.2.0"
+Service-Component: InvMValidatorCD.xml
