@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ERIStarletCallout
+Bundle-SymbolicName: ERIStarletCallout;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: ERIStarletCallout
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: org.adempiere.base;bundle-version="7.1.0",
+ org.adempiere.plugin.utils;bundle-version="7.1.0",
+ ERIStarletModel;bundle-version="1.0.0"
+Service-Component: cfac.xml

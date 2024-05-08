@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ERIStarletModel
+Bundle-SymbolicName: ERIStarletModel;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: ERIStarletModel
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: org.adempiere.base;bundle-version="8.2.0",
+ org.adempiere.plugin.utils;bundle-version="8.2.0"
+Service-Component: mfac.xml
+Export-Package: org.eri.model
