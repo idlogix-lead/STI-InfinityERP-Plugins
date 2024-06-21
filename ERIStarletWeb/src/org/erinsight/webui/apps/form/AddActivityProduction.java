@@ -50,6 +50,7 @@ public class AddActivityProduction extends ADForm  {
 	Radiogroup activityChoice ;
 	Map<String,String> viewMap = new HashMap<>();
 	Map<String,String> tableMap = new HashMap<>();
+	Map<String,Integer> priorityMap = new HashMap<>();
 	Textbox ticketID = new Textbox();
 	Listbox ticketsList;
 	
@@ -98,6 +99,12 @@ public class AddActivityProduction extends ADForm  {
 		tableMap.put("Strobel", "ER_Strobel");
 		tableMap.put("Lasting", "ER_Lasting");
 		tableMap.put("Packing", "ER_Packing");
+		
+		priorityMap.put("Cutting", 1);
+		priorityMap.put("Stitching", 2);
+		priorityMap.put("Strobel", 3);
+		priorityMap.put("Lasting", 4);
+		priorityMap.put("Packing", 5);
 	}
 
 	
@@ -157,7 +164,14 @@ public class AddActivityProduction extends ADForm  {
 				}
 				else {
 					if(isTicketExist(dpID)) {
-						showMessage("Production might already added aginst this ticket");
+						String meesage = getLatestProductionMessage(dpID);
+						if(meesage.length()>0) {
+							showMessage(meesage);
+						}
+						else {
+							showMessage("Production might already added aginst this ticket");
+						}
+						
 						ticketID.setRawValue("");
 						ticketID.setFocus(true);
 					}
@@ -222,6 +236,29 @@ public class AddActivityProduction extends ADForm  {
 	boolean isTicketExist(int ticketID) {
 		List<MDailyProduction> tickets = new Query(Env.getCtx(),MDailyProduction.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
 		return tickets.size()>0;
+	}
+	
+	String getLatestProductionMessage(int ticketID) {
+		String message="";	
+		String choice = activityChoice.getSelectedItem().getLabel();
+		List<MCuttingHdr> ctickets = new Query(Env.getCtx(),MCuttingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(ctickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Cutting") )
+			message+="Cutting, ";
+		List<MStitchingHdr> stickets = new Query(Env.getCtx(),MStitchingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(stickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Stitching"))
+			message+="Stitching, ";
+		List<MStrobelHdr> sttickets = new Query(Env.getCtx(),MStrobelHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(sttickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Strobel"))
+			message+="Strobel, ";
+		List<MLastingHdr> ltickets = new Query(Env.getCtx(),MLastingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(ltickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Lasting"))
+			message+="Lasting, ";
+		List<MPackingHdr> ptickets = new Query(Env.getCtx(),MPackingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(ptickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Packing"))
+			message+="Packing ";
+		if(message.length()!=0)
+			message = message +" still Pending";
+		return message;
 	}
 	
 	void addProduction(int dpID) {
