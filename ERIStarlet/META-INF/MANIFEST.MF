@@ -7,6 +7,10 @@ Automatic-Module-Name: ERIStarlet
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: org.adempiere.base;bundle-version="7.1.0",
  org.adempiere.plugin.utils;bundle-version="7.1.0",
- ERIStarletModel;bundle-version="1.0.0"
+ ERIStarletModel;bundle-version="1.0.0",
+ org.adempiere.ui.zk;bundle-version="8.2.0",
+ zk;bundle-version="9.5.0",
+ zul;bundle-version="9.5.0",
+ org.adempiere.ui;bundle-version="8.2.0"
 Service-Component: pfac.xml,cfac.xml,
  mfac.xml
