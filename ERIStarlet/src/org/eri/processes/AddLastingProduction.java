@@ -19,7 +19,7 @@ public class AddLastingProduction extends SvrProcess{
 	int LastingHdrID;
 	int dpID;
 	Timestamp movementDate;
-	
+	int productionLine;
 	
 	@Override
 	protected void prepare() {
@@ -36,6 +36,8 @@ public class AddLastingProduction extends SvrProcess{
 		
 			else if (name.equals("ER_DailyProduction_ID"))
 				dpID = para[i].getParameterAsInt();
+			else if (name.equals("PP_Production_Line_ID"))
+				productionLine = para[i].getParameterAsInt();
 
 			else if (name.equals("MovementDate"))
 				movementDate = para[i].getParameterAsTimestamp();
@@ -87,6 +89,7 @@ public class AddLastingProduction extends SvrProcess{
 				pline.set_ValueOfColumn("M_Product_ID", rs.getInt("m_product_id"));
 				pline.set_ValueOfColumn("ER_LastingHdr_ID", hdrid);
 //				pline.set_ValueOfColumn("MovementDate",new Timestamp(movementDate.getTime()));
+				pline.set_ValueOfColumn("PP_Production_Line_ID", productionLine);
 	            if(balqty>0)				
 	            pline.save();		
 			}

@@ -18,6 +18,7 @@ public class AddCuttingProduction extends SvrProcess{
 	int id ;
 	int cuttingHdrID;
 	int dpID;
+	int productionLine;
 	Timestamp movementDate;
 	
 	
@@ -36,6 +37,8 @@ public class AddCuttingProduction extends SvrProcess{
 		
 			else if (name.equals("ER_DailyProduction_ID"))
 				dpID = para[i].getParameterAsInt();
+			else if (name.equals("PP_Production_Line_ID"))
+				productionLine = para[i].getParameterAsInt();
 
 			else if (name.equals("MovementDate"))
 				movementDate = para[i].getParameterAsTimestamp();
@@ -86,6 +89,7 @@ public class AddCuttingProduction extends SvrProcess{
 				pline.setQty(new BigDecimal(balqty));
 				pline.set_ValueOfColumn("M_Product_ID", rs.getInt("m_product_id"));
 				pline.set_ValueOfColumn("ER_CuttingHdr_ID", hdrid);
+				pline.set_ValueOfColumn("PP_Production_Line_ID", productionLine);
 //				pline.set_ValueOfColumn("MovementDate",new Timestamp(movementDate.getTime()));
 	            if(balqty>0)				
 	            pline.save();		

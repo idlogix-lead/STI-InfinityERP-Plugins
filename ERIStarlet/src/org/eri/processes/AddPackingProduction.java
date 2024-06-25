@@ -19,7 +19,7 @@ public class AddPackingProduction extends SvrProcess{
 	int PackingHdrID;
 	int dpID;
 	Timestamp movementDate;
-	
+	int productionLine;
 	
 	@Override
 	protected void prepare() {
@@ -39,7 +39,8 @@ public class AddPackingProduction extends SvrProcess{
 
 			else if (name.equals("MovementDate"))
 				movementDate = para[i].getParameterAsTimestamp();
-
+			else if (name.equals("PP_Production_Line_ID"))
+				productionLine = para[i].getParameterAsInt();
 			
 			else
 				log.log(Level.SEVERE, "Unknown Parameter: " + name);
@@ -86,6 +87,7 @@ public class AddPackingProduction extends SvrProcess{
 				pline.setQty(new BigDecimal(balqty));
 				pline.set_ValueOfColumn("M_Product_ID", rs.getInt("m_product_id"));
 				pline.set_ValueOfColumn("ER_PackingHdr_ID", hdrid);
+				pline.set_ValueOfColumn("PP_Production_Line_ID", productionLine);
 //				pline.set_ValueOfColumn("MovementDate",new Timestamp(movementDate.getTime()));
 	            if(balqty>0)				
 	            pline.save();		

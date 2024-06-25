@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.util.ProcessUtil;
@@ -20,14 +21,20 @@ import org.adempiere.webui.component.ListItem;
 import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.Messagebox;
 import org.adempiere.webui.component.Textbox;
+import org.adempiere.webui.editor.WTableDirEditor;
 import org.adempiere.webui.panel.ADForm;
+import org.compiere.model.MLookup;
+import org.compiere.model.MLookupFactory;
+import org.compiere.model.MLookupInfo;
 import org.compiere.model.MPInstance;
 import org.compiere.model.MProcess;
 import org.compiere.model.Query;
 import org.compiere.process.ProcessInfo;
 import org.compiere.process.ProcessInfoParameter;
 import org.compiere.util.DB;
+import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
+import org.compiere.util.Language;
 import org.eri.model.MCuttingHdr;
 import org.eri.model.MDailyProduction;
 import org.eri.model.MLastingHdr;
@@ -50,23 +57,38 @@ public class AddActivityProduction extends ADForm  {
 	Radiogroup activityChoice ;
 	Map<String,String> viewMap = new HashMap<>();
 	Map<String,String> tableMap = new HashMap<>();
+	Map<String,Integer> priorityMap = new HashMap<>();
+	Map<String,Integer> referenceMap = new HashMap<>();
 	Textbox ticketID = new Textbox();
 	Listbox ticketsList;
+	Label prodLineLabel = new Label("Production Line");
+	WTableDirEditor prodLineField;
+	Hlayout inputElements;
 	
 	@Override
 	protected void initForm() {
 		// TODO Auto-generated method stub
 		
 		// Initialize header elements
+		initializeConstants();
+		
 		hdrLabel.setStyle(hdrLabelCSS);
 		activityChoice = getRadioGroup();
 		ticketID.setPlaceholder("Scan Ticket#");
 		ticketID.addEventListener(Events.ON_OK, this);
-		Hlayout inputElements = new Hlayout();
+		
+		inputElements = new Hlayout();
 		inputElements.appendChild(ticketID);
 		inputElements.appendChild(activityChoice);
+		
+		
 		inputElements.setStyle("display: flex; align-items: center; margin-top: 10px;margin-bottom: 10px;");
 		
+		prodLineLabel = new Label("Production Line");
+		prodLineLabel.setStyle("margin-left: 50px;");
+		inputElements.appendChild(prodLineLabel);
+		setProductionLineEditor("Cutting");
+		inputElements.appendChild(prodLineField.getComponent());
 		
 		ticketsList = getTicketsListBox( );
 		dataTable = getDetailListBox();
@@ -88,16 +110,7 @@ public class AddActivityProduction extends ADForm  {
 		this.appendChild(inputElements);
 		this.appendChild(mainPane);
 		
-		viewMap.put("Cutting", "ER_Cutting_Balance_V");
-		viewMap.put("Stitching", "ER_Stitching_Balance_V");
-		viewMap.put("Strobel", "ER_Strobel_Balance_V");
-		viewMap.put("Lasting", "ER_Lasting_Balance_V");
-		viewMap.put("Packing", "ER_Packing_Balance_V");
-		tableMap.put("Cutting", "ER_Cutting");
-		tableMap.put("Stitching", "ER_Stitching");
-		tableMap.put("Strobel", "ER_Strobel");
-		tableMap.put("Lasting", "ER_Lasting");
-		tableMap.put("Packing", "ER_Packing");
+		
 	}
 
 	
@@ -146,6 +159,13 @@ public class AddActivityProduction extends ADForm  {
 				showMessage("Please Enter Valid Ticket Number!");
 				return;
 			}
+			if(prodLineField.getValue()==null) {
+				ticketID.setRawValue("");
+				ticketID.setFocus(true);
+				showMessage("Please Select Production Line");
+				return;
+				
+			}
 				int dpID = Integer.parseInt(value);
 				String activity = activityChoice.getSelectedItem().getLabel();
 				if(isValidTicket(activity,dpID)) {
@@ -157,7 +177,14 @@ public class AddActivityProduction extends ADForm  {
 				}
 				else {
 					if(isTicketExist(dpID)) {
-						showMessage("Production might already added aginst this ticket");
+						String meesage = getLatestProductionMessage(dpID);
+						if(meesage.length()>0) {
+							showMessage(meesage);
+						}
+						else {
+							showMessage("Production might already added aginst this ticket");
+						}
+						
 						ticketID.setRawValue("");
 						ticketID.setFocus(true);
 					}
@@ -176,6 +203,8 @@ public class AddActivityProduction extends ADForm  {
 			showData(false,dpID);
 		}
 		if(event.getTarget().getParent() ==activityChoice && event.getName().equals(Events.ON_CHECK)) {
+			String activity =activityChoice.getSelectedItem().getLabel() ;
+			setProductionLineEditor(activity);
 			if( ticketsList.getItems().size()>0 && ticketsList.getSelectedItem()!=null) {
 				int dpID = Integer.parseInt(ticketsList.getSelectedItem().getLabel());
 				showData(false, dpID);
@@ -222,6 +251,29 @@ public class AddActivityProduction extends ADForm  {
 	boolean isTicketExist(int ticketID) {
 		List<MDailyProduction> tickets = new Query(Env.getCtx(),MDailyProduction.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
 		return tickets.size()>0;
+	}
+	
+	String getLatestProductionMessage(int ticketID) {
+		String message="";	
+		String choice = activityChoice.getSelectedItem().getLabel();
+		List<MCuttingHdr> ctickets = new Query(Env.getCtx(),MCuttingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(ctickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Cutting") )
+			message+="Cutting, ";
+		List<MStitchingHdr> stickets = new Query(Env.getCtx(),MStitchingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(stickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Stitching"))
+			message+="Stitching, ";
+		List<MStrobelHdr> sttickets = new Query(Env.getCtx(),MStrobelHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(sttickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Strobel"))
+			message+="Strobel, ";
+		List<MLastingHdr> ltickets = new Query(Env.getCtx(),MLastingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(ltickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Lasting"))
+			message+="Lasting, ";
+		List<MPackingHdr> ptickets = new Query(Env.getCtx(),MPackingHdr.Table_Name, " ER_DailyProduction_ID = ?", null).setParameters(ticketID).list();
+		if(ptickets.size()==0 && priorityMap.get(choice)> priorityMap.get("Packing"))
+			message+="Packing ";
+		if(message.length()!=0)
+			message = message +" still Pending";
+		return message;
 	}
 	
 	void addProduction(int dpID) {
@@ -283,8 +335,9 @@ public class AddActivityProduction extends ADForm  {
 		ProcessInfoParameter pi5 = new ProcessInfoParameter("ER_PackingHdr_ID",recordID,"","","");
 		ProcessInfoParameter pi6 = new ProcessInfoParameter("ER_DailyProduction_ID", dpID,"","","");
 		ProcessInfoParameter pi7 = new ProcessInfoParameter("MovementDate", currentDate,"","","");
+		ProcessInfoParameter pi8 = new ProcessInfoParameter("PP_Production_Line_ID", prodLineField.getValue(),"","","");
 		ProcessInfo pi = new ProcessInfo("", 53226,0,0);
-		pi.setParameter(new ProcessInfoParameter[] {pi1,pi2,pi3,pi4,pi5,pi6,pi7});
+		pi.setParameter(new ProcessInfoParameter[] {pi1,pi2,pi3,pi4,pi5,pi6,pi7,pi8});
 		MProcess pr = new Query(Env.getCtx(), MProcess.Table_Name, "value=?", null)
 		                        .setParameters(new Object[]{activity+"_AddProduction"})
 		                        .first();
@@ -411,6 +464,57 @@ public class AddActivityProduction extends ADForm  {
 		
 	}
 	
+	void setProductionLineEditor(String activity) {
+		
+		if(prodLineField!=null)
+		inputElements.removeChild(prodLineField.getComponent());
+		int referenceID = referenceMap.get(activity);
+		MLookup lookup = null;
+		try {
+			lookup = MLookupFactory.get(Env.getCtx(), getWindowNo(), 1001296, DisplayType.Table,
+							null, "Production Line", referenceID,
+							false, null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		prodLineField = new WTableDirEditor ("PP_Production_Line", true, false, true, lookup);
+		inputElements.appendChild(prodLineField.getComponent()); 
+	}
+	
+	void initializeConstants() {
+		viewMap.put("Cutting", "ER_Cutting_Balance_V");
+		viewMap.put("Stitching", "ER_Stitching_Balance_V");
+		viewMap.put("Strobel", "ER_Strobel_Balance_V");
+		viewMap.put("Lasting", "ER_Lasting_Balance_V");
+		viewMap.put("Packing", "ER_Packing_Balance_V");
+		tableMap.put("Cutting", "ER_Cutting");
+		tableMap.put("Stitching", "ER_Stitching");
+		tableMap.put("Strobel", "ER_Strobel");
+		tableMap.put("Lasting", "ER_Lasting");
+		tableMap.put("Packing", "ER_Packing");
+		
+		priorityMap.put("Cutting", 1);
+		priorityMap.put("Stitching", 2);
+		priorityMap.put("Strobel", 3);
+		priorityMap.put("Lasting", 4);
+		priorityMap.put("Packing", 5);
+		
+		//production env
+		referenceMap.put("Cutting", 1000108);
+		referenceMap.put("Stitching", 1000109);
+		referenceMap.put("Strobel", 1000110);
+		referenceMap.put("Lasting", 1000107);
+		referenceMap.put("Packing", 1000111);
+		
+		
+		//test env
+//		referenceMap.put("Cutting", 1000105);
+//		referenceMap.put("Stitching", 1000103);
+//		referenceMap.put("Strobel", 1000106);
+//		referenceMap.put("Lasting", 1000102);
+//		referenceMap.put("Packing", 1000107);
+	}
 	
 	
 }

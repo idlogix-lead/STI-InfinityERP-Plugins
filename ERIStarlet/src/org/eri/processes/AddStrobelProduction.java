@@ -19,7 +19,7 @@ public class AddStrobelProduction extends SvrProcess{
 	int StrobelHdrID;
 	int dpID;
 	Timestamp movementDate;
-	
+	int productionLine;
 	
 	@Override
 	protected void prepare() {
@@ -36,7 +36,8 @@ public class AddStrobelProduction extends SvrProcess{
 		
 			else if (name.equals("ER_DailyProduction_ID"))
 				dpID = para[i].getParameterAsInt();
-
+			else if (name.equals("PP_Production_Line_ID"))
+				productionLine = para[i].getParameterAsInt();
 			else if (name.equals("MovementDate"))
 				movementDate = para[i].getParameterAsTimestamp();
 
@@ -86,6 +87,7 @@ public class AddStrobelProduction extends SvrProcess{
 				pline.setQty(new BigDecimal(balqty));
 				pline.set_ValueOfColumn("M_Product_ID", rs.getInt("m_product_id"));
 				pline.set_ValueOfColumn("ER_StrobelHdr_ID", hdrid);
+				pline.set_ValueOfColumn("PP_Production_Line_ID", productionLine);
 //				pline.set_ValueOfColumn("MovementDate",new Timestamp(movementDate.getTime()));
 	            if(balqty>0)				
 	            pline.save();		
